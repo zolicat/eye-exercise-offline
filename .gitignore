@@ -1,0 +1,7 @@
+assets/audio/music/
+*.flac
+*.mp3
+*.ogg
+*.zip
+.DS_Store
+Thumbs.db

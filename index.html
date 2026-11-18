@@ -1,0 +1,2025 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>眼保健操节拍播放器</title>
+  <style>
+    :root {
+      --bg: #edf6ec;
+      --paper: #fbfff8;
+      --ink: #17372f;
+      --muted: #657b70;
+      --leaf: #1f8758;
+      --leaf-2: #5eb684;
+      --moss: #a9c36d;
+      --aqua: #70bdb5;
+      --lime: #d4e795;
+      --peach: #dca96f;
+      --stone: #e9e5d8;
+      --stone-line: #7e8174;
+      --line: rgba(38, 74, 62, 0.13);
+      --glass: rgba(251, 255, 248, 0.58);
+      --shadow: 0 22px 70px rgba(42, 87, 70, 0.16);
+      font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans SC", Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background: url("assets/zen-bamboo-bg.png") center / cover fixed no-repeat;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -2;
+      background: rgba(244, 250, 238, 0.1);
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(226, 241, 221, 0.06));
+      pointer-events: none;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      grid-template-columns: minmax(0, 1fr);
+      position: relative;
+      z-index: 1;
+    }
+
+    header {
+      height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 0 28px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.46);
+      background: rgba(249, 255, 246, 0.42);
+      backdrop-filter: blur(22px) saturate(1.1);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      color: var(--leaf);
+      background: rgba(255, 255, 255, 0.68);
+      border: 1px solid rgba(31, 135, 88, 0.18);
+      box-shadow: 0 10px 26px rgba(29, 105, 80, 0.12);
+      flex: 0 0 auto;
+    }
+
+    .brand-mark svg {
+      width: 26px;
+      height: 26px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.1;
+      font-weight: 720;
+      letter-spacing: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .top-status {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 0 0 auto;
+    }
+
+    .timer {
+      min-width: 106px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.78);
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+      box-shadow: 0 8px 22px rgba(55, 121, 92, 0.08);
+    }
+
+    .main {
+      width: min(1320px, 100%);
+      margin: 0 auto;
+      padding: 24px;
+      height: calc(100vh - 72px);
+      min-height: 720px;
+      display: grid;
+      grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+      gap: 24px;
+      align-items: stretch;
+    }
+
+    .panel,
+    .stage {
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      background: var(--glass);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(24px) saturate(1.12);
+    }
+
+    .panel {
+      border-radius: 8px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      min-height: 0;
+      overflow-y: auto;
+    }
+
+    .panel > * {
+      flex-shrink: 0;
+    }
+
+    .panel a {
+      color: var(--leaf);
+      text-underline-offset: 3px;
+    }
+
+    #musicFile, #backgroundFile { width: 100%; min-width: 0; font-size: 12px; }
+
+    .stage {
+      border-radius: 8px;
+      min-height: 680px;
+      position: relative;
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      background:
+        radial-gradient(circle at 58% 54%, rgba(255, 255, 250, 0.64), rgba(255, 255, 250, 0.18) 44%, transparent 68%),
+        rgba(251, 255, 248, 0.48);
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 48px 48px;
+      gap: 10px;
+    }
+
+    .btn {
+      height: 48px;
+      border: 0;
+      border-radius: 8px;
+      cursor: pointer;
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.76);
+      border: 1px solid rgba(255, 255, 255, 0.86);
+      transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      user-select: none;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 24px rgba(23, 112, 74, 0.14);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    button:focus-visible,
+    input:focus-visible + span,
+    input[type="range"]:focus-visible {
+      outline: 3px solid var(--leaf);
+      outline-offset: 3px;
+    }
+
+    .btn.primary {
+      color: #fff;
+      background: linear-gradient(135deg, #1f8758, #5ca874);
+      border-color: transparent;
+      box-shadow: 0 12px 26px rgba(29, 112, 82, 0.24);
+      font-weight: 700;
+    }
+
+    .btn .icon {
+      width: 20px;
+      display: inline-block;
+      text-align: center;
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .meters {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .meter {
+      min-height: 76px;
+      padding: 12px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.64);
+      border: 1px solid rgba(255, 255, 255, 0.78);
+    }
+
+    .meter-label {
+      margin-bottom: 7px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .meter-value {
+      font-size: 21px;
+      font-weight: 780;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.18;
+      overflow-wrap: anywhere;
+    }
+
+    .range-row {
+      display: grid;
+      gap: 8px;
+      padding: 14px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.52);
+      border: 1px solid rgba(255, 255, 255, 0.76);
+    }
+
+    .range-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--leaf);
+    }
+
+    .toggle-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .toggle {
+      position: relative;
+    }
+
+    .toggle input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .toggle span {
+      min-height: 40px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.76);
+      background: rgba(255, 255, 255, 0.56);
+      display: grid;
+      place-items: center;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+    }
+
+    .toggle input:checked + span {
+      background: rgba(31, 135, 88, 0.13);
+      border-color: rgba(31, 135, 88, 0.34);
+      color: var(--leaf);
+      font-weight: 700;
+    }
+
+    .steps {
+      display: grid;
+      gap: 8px;
+      overflow: visible;
+      padding-right: 4px;
+      min-height: 220px;
+    }
+
+    .step {
+      width: 100%;
+      border: 1px solid rgba(255, 255, 255, 0.74);
+      background: rgba(255, 255, 255, 0.58);
+      border-radius: 8px;
+      padding: 11px 12px;
+      text-align: left;
+      cursor: pointer;
+      display: grid;
+      grid-template-columns: 32px minmax(0, 1fr);
+      gap: 10px;
+      transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+    }
+
+    .step:hover {
+      transform: translateY(-1px);
+      border-color: rgba(29, 138, 88, 0.28);
+      background: rgba(255, 255, 255, 0.78);
+    }
+
+    .step.is-active {
+      background: rgba(238, 255, 244, 0.78);
+      border-color: rgba(31, 135, 88, 0.42);
+      box-shadow: inset 4px 0 0 var(--leaf);
+    }
+
+    .step-index {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: #eef8f2;
+      color: var(--leaf);
+      font-weight: 760;
+      font-size: 13px;
+    }
+
+    .step-name {
+      margin: 0 0 4px;
+      font-weight: 720;
+      font-size: 14px;
+      overflow-wrap: anywhere;
+    }
+
+    .step-meta {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .stage-head {
+      padding: 22px 24px 0;
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      align-items: start;
+      z-index: 2;
+    }
+
+    .current-title {
+      margin: 0 0 8px;
+      font-size: 28px;
+      line-height: 1.18;
+      letter-spacing: 0;
+    }
+
+    .current-sub {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .bar-counter {
+      display: grid;
+      grid-template-columns: repeat(8, 18px);
+      gap: 6px;
+      padding: 9px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.62);
+      border: 1px solid rgba(255, 255, 255, 0.78);
+      flex: 0 0 auto;
+    }
+
+    .beat-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 13px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .section-status {
+      min-width: 190px;
+      padding: 12px 14px;
+      border-radius: 8px;
+      display: grid;
+      gap: 4px;
+      background: rgba(255, 255, 255, 0.48);
+      border: 1px solid rgba(255, 255, 255, 0.74);
+      box-shadow: 0 12px 30px rgba(42, 87, 70, 0.1);
+      text-align: right;
+      flex: 0 0 auto;
+    }
+
+    .section-status span {
+      color: var(--leaf);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .section-status strong {
+      font-size: 15px;
+      line-height: 1.2;
+    }
+
+    .section-status em {
+      color: var(--muted);
+      font-size: 12px;
+      font-style: normal;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .beat-dot {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #e3efe9;
+      transition: background 120ms ease, transform 120ms ease;
+      display: grid;
+      place-items: center;
+      color: var(--ink);
+      font-size: 11px;
+    }
+
+    .beat-dot.is-on {
+      background: var(--leaf);
+      transform: scale(1.12);
+    }
+
+    .beat-dot.is-main {
+      background: var(--peach);
+    }
+
+    .face-wrap {
+      position: relative;
+      display: grid;
+      grid-template-rows: minmax(220px, 1fr) auto;
+      place-items: center;
+      min-height: 0;
+      padding: 8px 18px 10px;
+    }
+
+    .breath-ring {
+      position: absolute;
+      width: min(72%, 560px);
+      aspect-ratio: 1;
+      border-radius: 50%;
+      border: 1px solid rgba(31, 135, 88, 0.1);
+      background: radial-gradient(circle, rgba(255, 255, 248, 0.72), rgba(184, 222, 101, 0.1) 52%, transparent 67%);
+      animation: breathe 4s ease-in-out infinite;
+    }
+
+    @keyframes breathe {
+      0%, 100% { transform: scale(0.96); opacity: 0.56; }
+      50% { transform: scale(1.04); opacity: 0.9; }
+    }
+
+    .head-stage {
+      position: relative;
+      width: auto;
+      height: 100%;
+      max-width: 88%;
+      max-height: 630px;
+      aspect-ratio: 2 / 3;
+      border-radius: 8px;
+      overflow: hidden;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 248, 0.54), rgba(239, 236, 224, 0.42)),
+        rgba(248, 245, 234, 0.48);
+      border: 1px solid rgba(255, 255, 255, 0.82);
+      box-shadow:
+        0 26px 62px rgba(42, 70, 60, 0.16),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.34);
+    }
+
+    .head-stage::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 50% 38%, transparent 0 34%, rgba(248, 245, 234, 0.12) 52%, rgba(248, 245, 234, 0.28) 100%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(31, 75, 58, 0.08));
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .head-img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center center;
+      opacity: 0.88;
+      filter: saturate(0.92) contrast(1.02);
+    }
+
+    .face-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 2;
+      filter: none;
+      pointer-events: none;
+    }
+
+    .skin {
+      fill: url(#marbleFace);
+      stroke: rgba(94, 96, 85, 0.3);
+      stroke-width: 2;
+    }
+
+    .hair,
+    .neck {
+      fill: url(#marbleShadow);
+      stroke: rgba(94, 96, 85, 0.18);
+      stroke-width: 1.4;
+    }
+
+    .bust {
+      fill: url(#marbleBase);
+      stroke: rgba(94, 96, 85, 0.2);
+      stroke-width: 1.6;
+    }
+
+    .ear {
+      fill: url(#marbleFace);
+      stroke: rgba(94, 96, 85, 0.22);
+      stroke-width: 1.6;
+    }
+
+    .hair-carve,
+    .sculpture-line {
+      fill: none;
+      stroke: rgba(116, 118, 104, 0.44);
+      stroke-width: 3;
+      stroke-linecap: round;
+    }
+
+    .feature {
+      fill: none;
+      stroke: var(--stone-line);
+      stroke-width: 3.2;
+      stroke-linecap: round;
+    }
+
+    .feature.thin {
+      stroke-width: 2;
+      opacity: 0.62;
+    }
+
+    .orbit-path {
+      fill: none;
+      stroke: rgba(100, 199, 190, 0.28);
+      stroke-width: 8;
+      stroke-linecap: round;
+      stroke-dasharray: 12 14;
+      transition: stroke 180ms ease, stroke-width 180ms ease, opacity 180ms ease;
+      opacity: 0;
+    }
+
+    .orbit-path.is-active {
+      stroke: var(--aqua);
+      stroke-width: 11;
+      opacity: 1;
+      animation: orbit 1s linear infinite;
+    }
+
+    @keyframes orbit {
+      to { stroke-dashoffset: -26; }
+    }
+
+    .point {
+      fill: rgba(255, 255, 255, 0.9);
+      stroke: var(--leaf);
+      stroke-width: 6;
+      opacity: 0;
+      transition: transform 140ms ease, fill 140ms ease, stroke 140ms ease, opacity 140ms ease;
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+
+    .point.is-active {
+      fill: var(--lime);
+      stroke: #0d7d4c;
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .point.is-pulse {
+      animation: pulse 520ms ease-out;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1.04); }
+      55% { transform: scale(1.15); }
+      100% { transform: scale(1); }
+    }
+
+    .point-label {
+      font-size: 30px;
+      fill: #6e7568;
+      font-weight: 700;
+      opacity: 0;
+      transition: opacity 140ms ease, fill 140ms ease;
+      pointer-events: none;
+      paint-order: stroke;
+      stroke: rgba(248, 245, 234, 0.9);
+      stroke-width: 8px;
+      stroke-linejoin: round;
+    }
+
+    .point-label.is-active {
+      opacity: 1;
+      fill: var(--leaf);
+    }
+
+    .point-caption {
+      max-width: 600px;
+      margin: 8px auto;
+      padding: 0 16px;
+      font-size: 14px;
+      line-height: 1.6;
+      text-align: center;
+    }
+
+    .beat-settings { margin: 16px 0; }
+    .beat-setting { display: grid; grid-template-columns: minmax(0, 1fr) 64px auto; gap: 8px; align-items: center; margin: 10px 0; font-size: 13px; }
+    .beat-setting input { width: 64px; min-width: 0; padding: 6px; }
+    .location-note { font-size: 12px; line-height: 1.6; margin: 12px 16px; }
+    .head-stage.is-neck-view .face-svg { display: none; }
+
+    .head-stage.is-back-view .point-label {
+      opacity: 0 !important;
+    }
+
+    .stage-foot {
+      padding: 0 24px 22px;
+      display: grid;
+      gap: 14px;
+      z-index: 2;
+    }
+
+    .stage-foot .controls {
+      width: max-content;
+      grid-template-columns: repeat(3, 52px);
+      justify-content: center;
+      justify-self: center;
+      gap: 12px;
+      padding: 8px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.48);
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      box-shadow: 0 12px 30px rgba(42, 87, 70, 0.12);
+    }
+
+    .stage-foot .btn {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+    }
+
+    .stage-foot .btn.primary {
+      transform: scale(1.12);
+    }
+
+    .stage-foot #playText {
+      display: none;
+    }
+
+    .progress-track {
+      height: 12px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(16, 51, 44, 0.1);
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, var(--leaf), var(--aqua), var(--peach));
+      border-radius: inherit;
+      transition: width 110ms linear;
+    }
+
+    .foot-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .wake {
+      position: absolute;
+      inset: auto 20px 20px auto;
+      width: 146px;
+      height: 146px;
+      border-radius: 50%;
+      background: conic-gradient(from 130deg, rgba(112, 189, 181, 0.16), rgba(220, 169, 111, 0.18), rgba(169, 195, 109, 0.16), rgba(112, 189, 181, 0.16));
+      mask: radial-gradient(circle, transparent 56%, #000 57%);
+      opacity: 0.7;
+      animation: spin 18s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 920px) {
+      header {
+        padding: 0 16px;
+        height: auto;
+        min-height: 68px;
+      }
+
+      .top-status {
+        gap: 8px;
+      }
+
+      .main {
+        grid-template-columns: minmax(0, 1fr);
+        height: auto;
+        min-height: 0;
+        padding: 14px;
+      }
+
+      .stage {
+        min-height: 590px;
+        order: -1;
+      }
+
+      .stage-head {
+        padding: 18px 16px 0;
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .bar-counter {
+        width: max-content;
+      }
+
+      .section-status {
+        min-width: 0;
+        width: 100%;
+        text-align: left;
+      }
+
+      .current-title {
+        font-size: 24px;
+      }
+
+      .face-wrap {
+        padding: 0 6px;
+      }
+
+      .head-stage {
+        max-width: 90%;
+      }
+
+      .face-wrap {
+        padding-bottom: 8px;
+      }
+
+      .point-label {
+        display: none;
+      }
+
+      .point-caption {
+        display: block;
+        position: static;
+        margin: 0;
+        color: var(--leaf);
+        text-align: center;
+        font-size: 13px;
+        line-height: 18px;
+      }
+
+      .stage-foot {
+        padding: 0 16px 18px;
+      }
+    }
+
+    @media (max-width: 560px) {
+      h1 {
+        font-size: 16px;
+        line-height: 1.3;
+        white-space: normal;
+      }
+
+      .brand-mark {
+        width: 36px;
+        height: 36px;
+      }
+
+      .timer {
+        min-width: 90px;
+        padding: 8px;
+      }
+
+      .controls {
+        grid-template-columns: repeat(3, 44px);
+      }
+
+      .stage-foot .controls {
+        grid-template-columns: repeat(3, 48px);
+      }
+
+      .stage-foot .btn {
+        width: 48px;
+        height: 48px;
+      }
+
+      .meters {
+        grid-template-columns: 1fr;
+      }
+
+      .toggle-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .stage {
+        min-height: 660px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation: none !important;
+        transition: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" role="img">
+            <path d="M4 16c3.4-6.3 7.4-9.4 12-9.4S24.6 9.7 28 16c-3.4 6.3-7.4 9.4-12 9.4S7.4 22.3 4 16Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/>
+            <circle cx="16" cy="16" r="4.2" fill="currentColor"/>
+          </svg>
+        </div>
+        <h1>眼保健操节拍播放器</h1>
+      </div>
+      <div class="top-status">
+        <div class="timer" id="elapsedTime">00:00</div>
+      </div>
+    </header>
+
+    <main class="main">
+      <section class="panel" aria-label="播放控制">
+        <div class="meters">
+          <div class="meter">
+            <div class="meter-label">动作</div>
+            <div class="meter-value" id="repValue">准备</div>
+          </div>
+          <div class="meter">
+            <div class="meter-label">本节节拍</div>
+            <div class="meter-value" id="beatValue">1 / 8</div>
+          </div>
+        </div>
+
+        <div class="range-row">
+          <div class="range-head">
+            <span>速度</span>
+            <strong id="bpmLabel">48 BPM</strong>
+          </div>
+          <input id="bpmInput" type="range" min="40" max="84" value="48" step="2" aria-label="速度">
+        </div>
+
+        <div class="range-row">
+          <div class="range-head">
+            <label for="volumeInput">总音量</label>
+            <strong id="volumeLabel">70%</strong>
+          </div>
+          <input id="volumeInput" type="range" min="0" max="100" value="70" step="5">
+          <div class="range-head"><label for="voiceVolume">人声</label><output for="voiceVolume" id="voiceLevel">72%</output></div>
+          <input id="voiceVolume" type="range" min="0" max="100" value="72">
+          <div class="range-head"><label for="musicVolume">背景音乐</label><output for="musicVolume" id="musicLevel">42%</output></div>
+          <input id="musicVolume" type="range" min="0" max="100" value="42">
+          <small id="musicStatus" role="status">未选择背景音乐</small>
+        </div>
+
+        <div class="toggle-grid">
+          <label class="toggle">
+            <input id="ambientToggle" type="checkbox" checked>
+            <span>背景音乐</span>
+          </label>
+          <label class="toggle">
+            <input id="beatToggle" type="checkbox" checked>
+            <span>节拍</span>
+          </label>
+          <label class="toggle">
+            <input id="voiceToggle" type="checkbox" checked>
+            <span>口令</span>
+          </label>
+          <label class="toggle">
+            <input id="countToggle" type="checkbox" checked>
+            <span>数拍</span>
+          </label>
+        </div>
+
+        <div class="range-row">
+          <label for="voiceSelect">中文语音</label>
+          <select id="voiceSelect" style="width:100%;min-width:0;font:inherit"><option value="qwen">Qwen Serena · 中文女声</option><option value="serena">Serena · 中文女声</option><option value="kokoro">Kokoro · 中文女声</option></select>
+          <button type="button" id="voicePreview" class="btn">试听</button>
+          <small id="voiceStatus" role="status"></small>
+        </div>
+        <div class="range-row">
+          <label for="musicFile">选择 / 更换音乐</label>
+          <input id="musicFile" type="file" accept="audio/*,.mp3,.wav,.m4a,.flac,.ogg">
+          <button id="removeMusic" type="button" class="btn">移除音乐</button>
+          <small id="musicSaveStatus" role="status"></small>
+        </div>
+        <div class="range-row">
+          <label for="backgroundFile">选择 / 更换背景图片</label>
+          <input id="backgroundFile" type="file" accept="image/jpeg,image/png,image/webp">
+          <button type="button" class="btn" id="resetBackground">恢复默认背景</button>
+          <small id="backgroundStatus" role="status"></small>
+        </div>
+        <small id="settingsStatus" role="status" hidden>浏览器无法保存设置，本次调整仅在当前页面生效。</small>
+        <details class="beat-settings">
+          <summary>每节八拍数</summary>
+          <div id="beatSettings"></div>
+          <button type="button" class="btn" id="restoreBeats">恢复默认八拍数</button>
+          <small id="beatSettingsStatus" role="status"></small>
+        </details>
+        <details class="location-note">
+          <summary>定位依据与注意事项</summary>
+          <p>标点仅为近似示意，不能代替真人解剖定位。风池原图自带标记也仅为示意，石膏图不能清楚显示后颈肌肉边界。不要按压眼球或揉捏颈前、颈侧血管区；疼痛或不适时停止。</p>
+          <p>自定义时长不代表医学推荐疗程，本页不承诺治疗干眼症。</p>
+          <a href="https://www.sctcm120.cn/info/1091/15343.htm" target="_blank" rel="noopener noreferrer">四川省中医院：穴位定位</a> ·
+          <a href="https://wjw.beijing.gov.cn/bmfw_20143/jkzs/jksh/202501/t20250127_4001149.html" target="_blank" rel="noopener noreferrer">中国中医科学院眼科医院：眼保健操</a>
+        </details>
+        <div class="steps" id="stepsList" aria-label="动作列表"></div>
+      </section>
+
+      <section class="stage" aria-label="穴位同步动画">
+        <div class="wake" aria-hidden="true"></div>
+        <div class="stage-head">
+          <div>
+            <h2 class="current-title" id="currentTitle">准备</h2>
+            <p class="current-sub" id="currentSub">放松闭眼 · 8 拍</p>
+          </div>
+          <div class="section-status" aria-label="当前节状态">
+            <span id="sectionPill">准备</span>
+            <strong id="phaseText">放松闭眼</strong>
+            <em id="stageBeatValue">第 1 / 8 拍</em>
+          </div>
+        </div>
+
+        <div class="face-wrap">
+          <div class="breath-ring" aria-hidden="true"></div>
+          <div class="head-stage" id="headStage">
+            <img class="head-img" id="headImage" src="assets/plaster-head.png" alt="正面石膏人像头部">
+            <svg class="face-svg" viewBox="0 0 1024 1536" role="img" aria-labelledby="faceTitle">
+              <title id="faceTitle">面部穴位点亮示意图</title>
+              <path id="orbit-left" class="orbit-path" d="M450 529 Q399 480 337 530"/>
+              <path id="orbit-right" class="orbit-path" d="M574 529 Q625 480 687 530"/>
+
+              <g data-point="zanzhu-l">
+                <circle class="point" cx="452" cy="498" r="8"/>
+                <text class="point-label" x="328" y="500">攒竹</text>
+              </g>
+              <g data-point="zanzhu-r">
+                <circle class="point" cx="572" cy="498" r="8"/>
+                <text class="point-label" x="594" y="500">攒竹</text>
+              </g>
+              <g data-point="yuyao-l">
+                <circle class="point" cx="399" cy="490" r="8"/>
+                <text class="point-label" x="286" y="474">鱼腰</text>
+              </g>
+              <g data-point="yuyao-r">
+                <circle class="point" cx="625" cy="490" r="8"/>
+                <text class="point-label" x="652" y="474">鱼腰</text>
+              </g>
+              <g data-point="sizhukong-l">
+                <circle class="point" cx="330" cy="516" r="8"/>
+                <text class="point-label" x="138" y="536">丝竹空</text>
+              </g>
+              <g data-point="sizhukong-r">
+                <circle class="point" cx="694" cy="516" r="8"/>
+                <text class="point-label" x="748" y="536">丝竹空</text>
+              </g>
+              <g data-point="jingming-l">
+                <circle class="point" cx="459" cy="553" r="8"/>
+                <text class="point-label" x="350" y="650">睛明</text>
+              </g>
+              <g data-point="jingming-r">
+                <circle class="point" cx="565" cy="553" r="8"/>
+                <text class="point-label" x="582" y="650">睛明</text>
+              </g>
+              <g data-point="tongziliao-l">
+                <circle class="point" cx="325" cy="562" r="8"/>
+                <text class="point-label" x="130" y="664">瞳子髎</text>
+              </g>
+              <g data-point="tongziliao-r">
+                <circle class="point" cx="699" cy="562" r="8"/>
+                <text class="point-label" x="742" y="664">瞳子髎</text>
+              </g>
+              <g data-point="sibai-l">
+                <circle class="point" cx="399" cy="639" r="8"/>
+                <text class="point-label" x="280" y="760">四白</text>
+              </g>
+              <g data-point="sibai-r">
+                <circle class="point" cx="625" cy="639" r="8"/>
+                <text class="point-label" x="668" y="760">四白</text>
+              </g>
+              <g data-point="taiyang-l">
+                <circle class="point" cx="292" cy="535" r="8"/>
+                <text class="point-label" x="130" y="614">太阳</text>
+              </g>
+              <g data-point="taiyang-r">
+                <circle class="point" cx="732" cy="535" r="8"/>
+                <text class="point-label" x="800" y="614">太阳</text>
+              </g>
+              <g data-point="fengchi-l">
+                <circle class="point" cx="392" cy="724" r="18"/>
+                <text class="point-label" x="270" y="780">风池</text>
+              </g>
+              <g data-point="fengchi-r">
+                <circle class="point" cx="632" cy="724" r="18"/>
+                <text class="point-label" x="662" y="780">风池</text>
+              </g>
+              <g data-point="ear-l">
+                <circle class="point" cx="222" cy="740" r="18"/>
+                <text class="point-label" x="112" y="790">耳垂</text>
+              </g>
+              <g data-point="ear-r">
+                <circle class="point" cx="802" cy="740" r="18"/>
+                <text class="point-label" x="836" y="790">耳垂</text>
+              </g>
+            </svg>
+          </div>
+          <p class="point-caption" id="pointCaption"></p>
+        </div>
+
+        <div class="stage-foot">
+          <div class="controls">
+            <button class="btn primary" id="playBtn" type="button" aria-label="开始" title="开始">
+              <span class="icon" id="playIcon" aria-hidden="true">▶</span>
+              <span id="playText">开始</span>
+            </button>
+            <button class="btn" id="pauseBtn" type="button" aria-label="暂停" title="暂停">
+              <span class="icon">⏸</span>
+            </button>
+            <button class="btn" id="resetBtn" type="button" aria-label="重置" title="重置">
+              <span class="icon">↺</span>
+            </button>
+          </div>
+          <div class="beat-row">
+            <span id="barValue">第 1 / 1 组八拍</span>
+            <div class="bar-counter" id="barCounter" aria-hidden="true">
+              <span class="beat-dot">1</span><span class="beat-dot">2</span>
+              <span class="beat-dot">3</span><span class="beat-dot">4</span>
+              <span class="beat-dot">5</span><span class="beat-dot">6</span>
+              <span class="beat-dot">7</span><span class="beat-dot">8</span>
+            </div>
+          </div>
+          <div class="progress-track" id="sectionTrack" role="progressbar" aria-label="本节进度" aria-valuemin="0" aria-valuemax="8" aria-valuenow="0">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+          <div class="foot-meta">
+            <span id="sectionProgress">准备 · 1 / 8 拍</span>
+            <span id="totalTime"></span>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="assets/audio/voice-packs.js"></script>
+  <script src="assets/music-library.js"></script>
+  <script src="assets/eye-audio.js"></script>
+  <script>
+    const headImages = {
+      front: {
+        src: "assets/plaster-head.png",
+        alt: "正面石膏人像头部"
+      },
+      back: {
+        src: "assets/plaster-back-head-fengchi.png",
+        alt: "背面石膏人像后颈风池穴"
+      },
+      neck: {
+        src: "assets/plaster-head.png",
+        alt: "与其他动作共用的石膏人像，当前动作为揉捏脖颈"
+      }
+    };
+
+    const exerciseSteps = [
+      {
+        name: "准备",
+        cue: "准备，放松闭眼",
+        detail: "放松闭眼",
+        summary: "8 拍 · 过渡 · 放松闭眼",
+        beats: 8,
+        actionTotal: 0,
+        points: []
+      },
+      {
+        name: "揉捏脖颈",
+        cue: "揉捏脖颈，轻柔放松后颈肌肉",
+        detail: "轻柔揉捏后颈肌肉，避开颈前及颈侧血管区",
+        summary: "16 拍 · 轻柔揉捏后颈",
+        beats: 16,
+        actionTotal: 16,
+        actionName: "揉捏",
+        actionUnit: "次",
+        count: true,
+        view: "neck",
+        points: []
+      },
+      {
+        name: "按揉风池穴",
+        cue: "第一节，按揉风池穴",
+        detail: "枕骨下方，胸锁乳突肌与斜方肌上端之间的凹陷",
+        section: 1,
+        summary: "32 拍 · 每拍按揉一圈",
+        beats: 32,
+        actionTotal: 32,
+        actionName: "按揉",
+        actionUnit: "圈",
+        view: "back",
+        points: ["fengchi-l", "fengchi-r"]
+      },
+      {
+        name: "按压睛明穴",
+        cue: "第二节，按压睛明穴",
+        detail: "内眼角稍上方、鼻根旁的凹陷；不要压眼球",
+        section: 2,
+        summary: "128 拍 · 轻柔按压",
+        beats: 128,
+        actionTotal: 128,
+        actionName: "按压",
+        actionUnit: "次",
+        points: ["jingming-l", "jingming-r"]
+      },
+      {
+        name: "按揉攒竹穴",
+        cue: "第三节，按揉攒竹穴",
+        detail: "眉毛内侧起点的凹陷，不在上眼皮",
+        section: 3,
+        summary: "48 拍 · 每拍按揉一圈",
+        beats: 48,
+        actionTotal: 48,
+        actionName: "按揉",
+        actionUnit: "圈",
+        points: ["zanzhu-l", "zanzhu-r"]
+      },
+      {
+        name: "按揉鱼腰穴",
+        cue: "第四节，按揉鱼腰穴",
+        detail: "眉毛中央",
+        section: 4,
+        summary: "48 拍 · 每拍按揉一圈",
+        beats: 48,
+        actionTotal: 48,
+        actionName: "按揉",
+        actionUnit: "圈",
+        points: ["yuyao-l", "yuyao-r"]
+      },
+      {
+        name: "按揉丝竹空穴",
+        cue: "第五节，按揉丝竹空穴",
+        detail: "眉梢外侧凹陷处",
+        section: 5,
+        summary: "48 拍 · 每拍按揉一圈",
+        beats: 48,
+        actionTotal: 48,
+        actionName: "按揉",
+        actionUnit: "圈",
+        points: ["sizhukong-l", "sizhukong-r"]
+      },
+      {
+        name: "按揉瞳子髎穴",
+        cue: "第六节，按揉瞳子髎穴",
+        detail: "外眼角外侧的骨性凹陷，不在眼球或眼睑上",
+        section: 6,
+        summary: "48 拍 · 每拍按揉一圈",
+        beats: 48,
+        actionTotal: 48,
+        actionName: "按揉",
+        actionUnit: "圈",
+        points: ["tongziliao-l", "tongziliao-r"]
+      },
+      {
+        name: "按揉太阳穴",
+        cue: "第七节，按揉太阳穴",
+        detail: "眉梢与外眼角之间向后一横指",
+        section: 7,
+        summary: "48 拍 · 每拍按揉一圈",
+        beats: 48,
+        actionTotal: 48,
+        actionName: "按揉",
+        actionUnit: "圈",
+        points: ["taiyang-l", "taiyang-r"]
+      },
+      {
+        name: "按揉四白穴",
+        cue: "第八节，按揉四白穴",
+        detail: "瞳孔正下方，眶下孔所在的凹陷；不是下眼睑",
+        section: 8,
+        summary: "48 拍 · 每拍按揉一圈",
+        beats: 48,
+        actionTotal: 48,
+        actionName: "按揉",
+        actionUnit: "圈",
+        points: ["sibai-l", "sibai-r"]
+      },
+      {
+        name: "按揉太阳穴，刮上眼眶",
+        cue: "第九节，按揉太阳穴，刮上眼眶",
+        detail: "太阳穴与上眼眶",
+        section: 9,
+        summary: "128 拍 · 4 拍按揉 + 4 拍刮上眼眶",
+        beats: 128,
+        actionTotal: 64,
+        points: ["taiyang-l", "taiyang-r"],
+        mode: "orbit"
+      },
+      {
+        name: "收势",
+        cue: "收势，慢慢睁眼",
+        detail: "慢慢睁眼",
+        summary: "16 拍 · 过渡 · 慢慢睁眼",
+        beats: 16,
+        actionTotal: 0,
+        points: []
+      }
+    ];
+
+    const state = {
+      status: "idle",
+      audio: null,
+      masterGain: null,
+      cueGain: null,
+      startTime: 0,
+      pausedElapsed: 0,
+      scheduler: null,
+      raf: null,
+      nextBeat: 0,
+      lastBeat: -1,
+      lastStepIndex: -1,
+      playbackStepIndex: -1,
+      selectedBeat: 0,
+      introducing: false,
+      playbackRevision: 0,
+      beatNodes: new Set()
+    };
+
+    const els = {
+      playBtn: document.getElementById("playBtn"),
+      playIcon: document.getElementById("playIcon"),
+      playText: document.getElementById("playText"),
+      pauseBtn: document.getElementById("pauseBtn"),
+      resetBtn: document.getElementById("resetBtn"),
+      bpmInput: document.getElementById("bpmInput"),
+      bpmLabel: document.getElementById("bpmLabel"),
+      volumeInput: document.getElementById("volumeInput"),
+      volumeLabel: document.getElementById("volumeLabel"),
+      ambientToggle: document.getElementById("ambientToggle"),
+      beatToggle: document.getElementById("beatToggle"),
+      voiceToggle: document.getElementById("voiceToggle"),
+      countToggle: document.getElementById("countToggle"),
+      stepsList: document.getElementById("stepsList"),
+      headStage: document.getElementById("headStage"),
+      headImage: document.getElementById("headImage"),
+      pointCaption: document.getElementById("pointCaption"),
+      sectionPill: document.getElementById("sectionPill"),
+      phaseText: document.getElementById("phaseText"),
+      stageBeatValue: document.getElementById("stageBeatValue"),
+      currentTitle: document.getElementById("currentTitle"),
+      currentSub: document.getElementById("currentSub"),
+      repValue: document.getElementById("repValue"),
+      beatValue: document.getElementById("beatValue"),
+      progressFill: document.getElementById("progressFill"),
+      sectionProgress: document.getElementById("sectionProgress"),
+      sectionTrack: document.getElementById("sectionTrack"),
+      barValue: document.getElementById("barValue"),
+      beatDots: document.querySelectorAll(".beat-dot"),
+      elapsedTime: document.getElementById("elapsedTime"),
+      totalTime: document.getElementById("totalTime")
+    };
+
+    let totalBeats = exerciseSteps.reduce((sum, step) => sum + step.beats, 0);
+
+    function getBpm() {
+      return Number(els.bpmInput.value);
+    }
+
+    function getSecondsPerBeat() {
+      return 60 / getBpm();
+    }
+
+    function getBeatAtElapsed(elapsed) {
+      return Math.floor(elapsed / getSecondsPerBeat() + 0.0000001);
+    }
+
+    function getTotalSeconds() {
+      return totalBeats * getSecondsPerBeat();
+    }
+
+    function formatTime(seconds) {
+      const safe = Math.max(0, Math.floor(seconds));
+      const minutes = Math.floor(safe / 60);
+      const rest = safe % 60;
+      return `${String(minutes).padStart(2, "0")}:${String(rest).padStart(2, "0")}`;
+    }
+
+    function buildStepMap() {
+      let cursor = 0;
+      return exerciseSteps.map((step, index) => {
+        const item = { ...step, index, startBeat: cursor, endBeat: cursor + step.beats };
+        cursor += step.beats;
+        return item;
+      });
+    }
+
+    let stepMap = buildStepMap();
+
+    function getStepAtBeat(beat) {
+      const clamped = Math.min(Math.max(beat, 0), totalBeats - 1);
+      return stepMap.find((step) => clamped >= step.startBeat && clamped < step.endBeat) || stepMap[0];
+    }
+
+    function buildUi() {
+      els.stepsList.innerHTML = "";
+      stepMap.forEach((step) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "step";
+        button.dataset.index = String(step.index);
+        const stepMark = step.section ? step.section : step.count ? "颈" : step.index === 0 ? "预" : "收";
+        button.innerHTML = `
+          <span class="step-index">${stepMark}</span>
+          <span>
+            <p class="step-name">${step.section ? `第${step.section}节 ` : ""}${step.name}</p>
+            <p class="step-meta">${step.summary}</p>
+          </span>
+        `;
+        button.addEventListener("click", () => jumpToBeat(step.startBeat));
+        els.stepsList.appendChild(button);
+      });
+      updateTotalTime();
+      renderAtBeat(0, 0);
+    }
+
+    const voiceVolume = document.getElementById("voiceVolume");
+    const musicVolume = document.getElementById("musicVolume");
+
+    function getMusicLevel() {
+      return els.ambientToggle.checked ? musicVolume.valueAsNumber / 100 : 0;
+    }
+
+    function getVoiceLevel() {
+      return els.volumeInput.valueAsNumber / 100 * voiceVolume.valueAsNumber / 100;
+    }
+
+    function ensureAudio() {
+      if (state.audio) return state.audio;
+
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      state.audio = new AudioContext();
+      state.masterGain = state.audio.createGain();
+      state.cueGain = state.audio.createGain();
+
+      state.masterGain.gain.value = 0;
+      state.cueGain.gain.value = els.beatToggle.checked ? 0.8 : 0;
+
+      state.cueGain.connect(state.masterGain);
+      state.masterGain.connect(state.audio.destination);
+
+      return state.audio;
+    }
+
+    function countNumber(localBeat) {
+      const position = localBeat % 8;
+      return position === 0 ? Math.floor(localBeat / 8) % 8 + 1 : position + 1;
+    }
+
+    function scheduleBeat(beatIndex, time) {
+      const localBeat = beatIndex - getStepAtBeat(beatIndex).startBeat;
+      if (!state.audio || !els.beatToggle.checked) return;
+
+      const beatInBar = localBeat % 8;
+      const osc = state.audio.createOscillator();
+      const gain = state.audio.createGain();
+      const isMain = beatInBar === 0;
+
+      osc.type = isMain ? "sine" : "triangle";
+      osc.frequency.setValueAtTime(isMain ? 880 : beatInBar === 4 ? 620 : 440, time);
+      gain.gain.setValueAtTime(0.0001, time);
+      gain.gain.exponentialRampToValueAtTime(isMain ? 0.16 : 0.07, time + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0001, time + (isMain ? 0.16 : 0.08));
+
+      osc.connect(gain);
+      gain.connect(state.cueGain);
+      osc.start(time);
+      osc.stop(time + 0.2);
+      state.beatNodes.add(osc);
+      osc.onended = () => {
+        state.beatNodes.delete(osc);
+        osc.disconnect();
+        gain.disconnect();
+      };
+    }
+
+    function schedulerTick() {
+      if (!state.audio || state.status !== "playing" || state.introducing) return;
+      const secondsPerBeat = getSecondsPerBeat();
+      const lookahead = 0.14;
+
+      const step = getStepAtBeat(state.selectedBeat);
+      while (state.nextBeat < step.endBeat) {
+        const beatTime = state.startTime + state.nextBeat * secondsPerBeat;
+        if (beatTime > state.audio.currentTime + lookahead) break;
+        if (beatTime >= state.audio.currentTime - 0.04) scheduleBeat(state.nextBeat, Math.max(beatTime, state.audio.currentTime));
+        state.nextBeat += 1;
+      }
+    }
+
+    async function play() {
+      if (state.status === "playing") {
+        pause();
+        return;
+      }
+      if (state.pausedElapsed >= getTotalSeconds()) {
+        state.pausedElapsed = 0;
+      }
+      const step = getStepAtBeat(getBeatAtElapsed(state.pausedElapsed));
+      if (step.index !== state.playbackStepIndex) state.pausedElapsed = step.startBeat * getSecondsPerBeat();
+      await startPlayback(Math.abs(state.pausedElapsed - step.startBeat * getSecondsPerBeat()) < 0.001);
+    }
+
+    async function startPlayback(announce) {
+      const revision = ++state.playbackRevision;
+      stopPlayback({ keepMusic: true });
+      state.status = "playing";
+      state.introducing = true;
+      els.bpmInput.disabled = true;
+      setPlayButton(true);
+      const beat = getBeatAtElapsed(state.pausedElapsed);
+      const step = getStepAtBeat(beat);
+      renderAtBeat(beat, state.pausedElapsed);
+      try {
+        const audio = ensureAudio();
+        if (audio.state === "suspended") await audio.resume();
+        if (revision !== state.playbackRevision) return;
+        audioTracks.startMusic();
+        if (announce && els.voiceToggle.checked && getVoiceLevel() > 0) {
+          await announceCue(step.cue);
+          if (revision !== state.playbackRevision) return;
+          if (els.voiceToggle.checked && getVoiceLevel() > 0) {
+            await new Promise(resolve => window.setTimeout(resolve, 1000));
+          }
+        }
+        if (revision !== state.playbackRevision) return;
+        state.introducing = false;
+        state.playbackStepIndex = step.index;
+        state.startTime = audio.currentTime - state.pausedElapsed;
+        state.nextBeat = Math.ceil(state.pausedElapsed / getSecondsPerBeat() - 0.00001);
+        state.lastBeat = state.nextBeat === beat ? -1 : beat;
+        state.masterGain.gain.setValueAtTime(Number(els.volumeInput.value) / 100, audio.currentTime);
+        state.scheduler = window.setInterval(schedulerTick, 25);
+        schedulerTick();
+      } catch (error) {
+        if (revision !== state.playbackRevision) return;
+        pause();
+        els.currentSub.textContent = "音频暂不可用，请重新开始";
+        console.error(error);
+        return;
+      }
+      animate();
+    }
+
+    function pause() {
+      if (state.status !== "playing") {
+        stopSpeech();
+        audioTracks.pauseMusic();
+        return;
+      }
+      state.pausedElapsed = getElapsedSeconds();
+      const step = getStepAtBeat(getBeatAtElapsed(state.pausedElapsed));
+      if (step.index !== state.playbackStepIndex) state.pausedElapsed = step.startBeat * getSecondsPerBeat();
+      state.selectedBeat = getBeatAtElapsed(state.pausedElapsed);
+      state.playbackRevision += 1;
+      state.status = "paused";
+      stopPlayback();
+      state.introducing = false;
+      els.bpmInput.disabled = false;
+      setPlayButton(false);
+      renderAtBeat(getBeatAtElapsed(state.pausedElapsed), state.pausedElapsed);
+    }
+
+    function reset() {
+      state.playbackRevision += 1;
+      state.status = "idle";
+      stopPlayback();
+      audioTracks.resetMusic();
+      state.introducing = false;
+      state.pausedElapsed = 0;
+      state.selectedBeat = 0;
+      state.lastBeat = -1;
+      state.lastStepIndex = -1;
+      state.playbackStepIndex = -1;
+      els.bpmInput.disabled = false;
+      setPlayButton(false);
+      renderAtBeat(0, 0);
+    }
+
+    function jumpToBeat(beat) {
+      const wasPlaying = state.status === "playing";
+      state.playbackRevision += 1;
+      stopPlayback({ keepMusic: wasPlaying });
+      state.introducing = false;
+      const nextBeat = Math.min(Math.max(beat, 0), totalBeats - 1);
+      state.selectedBeat = nextBeat;
+      state.pausedElapsed = nextBeat * getSecondsPerBeat();
+      state.lastBeat = -1;
+      state.lastStepIndex = -1;
+      state.status = wasPlaying ? "paused" : state.status === "idle" ? "idle" : "paused";
+      renderAtBeat(nextBeat, state.pausedElapsed);
+      if (wasPlaying) startPlayback(true);
+      else setPlayButton(false);
+    }
+
+    function getElapsedSeconds() {
+      if (state.status === "playing" && state.audio && !state.introducing) {
+        return Math.max(0, state.audio.currentTime - state.startTime);
+      }
+      return state.pausedElapsed;
+    }
+
+    function animate() {
+      if (state.status !== "playing" || state.introducing) return;
+      const elapsed = getElapsedSeconds();
+      const totalSeconds = getTotalSeconds();
+      if (elapsed >= totalSeconds) {
+        state.pausedElapsed = totalSeconds;
+        state.status = "finished";
+        state.playbackRevision += 1;
+        stopPlayback();
+        els.bpmInput.disabled = false;
+        setPlayButton(false);
+        renderAtBeat(totalBeats - 1, totalSeconds);
+        return;
+      }
+
+      const beat = getBeatAtElapsed(elapsed);
+      const step = getStepAtBeat(beat);
+      if (step.index !== state.playbackStepIndex) {
+        state.pausedElapsed = step.startBeat * getSecondsPerBeat();
+        startPlayback(true);
+        return;
+      }
+      renderAtBeat(beat, elapsed);
+      state.raf = requestAnimationFrame(animate);
+    }
+
+    function renderAtBeat(beat, elapsed) {
+      const safeBeat = Math.min(Math.max(beat, 0), totalBeats - 1);
+      const step = getStepAtBeat(safeBeat);
+      const localBeat = safeBeat - step.startBeat;
+      const view = getBeatView(step, localBeat);
+
+      els.currentTitle.textContent = view.title;
+      els.currentSub.textContent = `${view.phase} · ${view.beatText}`;
+      els.repValue.textContent = view.actionText;
+      els.beatValue.textContent = view.beatText;
+      els.sectionPill.textContent = view.pill;
+      els.phaseText.textContent = view.phase;
+      els.stageBeatValue.textContent = view.beatText;
+      els.elapsedTime.textContent = formatTime(elapsed);
+      const completedBeats = Math.min(step.beats, Math.max(0, elapsed / getSecondsPerBeat() - step.startBeat));
+      els.progressFill.style.width = `${completedBeats / step.beats * 100}%`;
+      els.sectionProgress.textContent = `${view.pill} · ${view.beatText}`;
+      els.sectionTrack.setAttribute("aria-valuemax", String(step.beats));
+      els.sectionTrack.setAttribute("aria-valuenow", String(Math.floor(completedBeats)));
+      els.sectionTrack.setAttribute("aria-valuetext", `${view.pill}，${view.beatText}`);
+      els.barValue.textContent = `第 ${Math.floor(localBeat / 8) + 1} / ${Math.ceil(step.beats / 8)} 组八拍`;
+      els.beatDots.forEach((dot, index) => {
+        const digit = String(countNumber(localBeat - localBeat % 8 + index));
+        if (dot.textContent !== digit) dot.textContent = digit;
+        dot.classList.toggle("is-on", index === localBeat % 8);
+        dot.classList.toggle("is-main", index === 0 && localBeat % 8 === 0);
+      });
+
+      updateSteps(step.index);
+      updateFace(view, safeBeat !== state.lastBeat);
+      state.selectedBeat = safeBeat;
+
+      if (state.status === "playing" && !state.introducing && safeBeat !== state.lastBeat && (step.section || step.count) && els.countToggle.checked) {
+        const pack = window.EYE_VOICE_PACKS[voiceSelect.value];
+        const key = pack.countGroups?.[Math.floor(localBeat / 8) % 8]?.[localBeat % 8];
+        speak(key || "一二三四五六七八"[countNumber(localBeat) - 1]);
+      }
+      state.lastStepIndex = step.index;
+      state.lastBeat = safeBeat;
+    }
+
+    function getBeatView(step, localBeat) {
+      const sectionBeat = localBeat + 1;
+      const eight = Math.floor(localBeat / 8) + 1;
+      const beatInEight = (localBeat % 8) + 1;
+      const title = step.section ? `第${step.section}节 ${step.name}` : step.name;
+      const pill = step.section ? `第${step.section}节` : step.name;
+      const beatText = `${sectionBeat} / ${step.beats} 拍`;
+      const imageView = step.view || "front";
+
+      if (step.mode === "orbit") {
+        const rubPhase = beatInEight <= 4;
+        if (rubPhase) {
+          return {
+            title,
+            pill,
+            beatText,
+            phase: `第 ${eight} 个八拍 · 按揉太阳穴`,
+            actionText: `按揉 ${beatInEight}/4圈`,
+            imageView,
+            activePoints: ["taiyang-l", "taiyang-r"],
+            orbitActive: false
+          };
+        }
+
+        return {
+          title,
+          pill,
+          beatText,
+          phase: `第 ${eight} 个八拍 · 刮上眼眶`,
+          actionText: `刮眼眶 ${Math.floor((beatInEight - 5) / 2) + 1}/2次`,
+          imageView,
+          activePoints: ["taiyang-l", "taiyang-r", "zanzhu-l", "zanzhu-r", "jingming-l", "jingming-r"],
+          orbitActive: true
+        };
+      }
+
+      if (!step.actionTotal) {
+        return {
+          title,
+          pill,
+          beatText,
+          phase: step.detail,
+          actionText: step.name,
+          imageView,
+          activePoints: step.points,
+          orbitActive: false
+        };
+      }
+
+      return {
+        title,
+        pill,
+        beatText,
+        phase: step.detail,
+        actionText: `${step.actionName} ${sectionBeat}/${step.actionTotal}${step.actionUnit}`,
+        imageView,
+        activePoints: step.points,
+        orbitActive: false
+      };
+    }
+
+    function updateSteps(activeIndex) {
+      document.querySelectorAll(".step").forEach((step) => {
+        step.classList.toggle("is-active", Number(step.dataset.index) === activeIndex);
+        if (Number(step.dataset.index) === activeIndex) step.setAttribute("aria-current", "step");
+        else step.removeAttribute("aria-current");
+      });
+    }
+
+    function updateFace(view, shouldPulse) {
+      const targetImage = headImages[view.imageView] || headImages.front;
+      if (els.headImage.getAttribute("src") !== targetImage.src) {
+        els.headImage.src = targetImage.src;
+      }
+      els.headImage.alt = targetImage.alt;
+      els.headStage.classList.toggle("is-back-view", view.imageView === "back");
+      els.headStage.classList.toggle("is-neck-view", view.imageView === "neck");
+
+      const activePoints = new Set(view.activePoints);
+      const pointNames = new Set();
+      document.querySelectorAll("[data-point]").forEach((group) => {
+        const pointName = group.dataset.point;
+        const active = activePoints.has(pointName);
+        const point = group.querySelector(".point");
+        const label = group.querySelector(".point-label");
+        if (active) pointNames.add(label.textContent);
+        point.classList.toggle("is-active", active);
+        label.classList.toggle("is-active", active);
+        if (active && shouldPulse) {
+          point.classList.remove("is-pulse");
+          window.requestAnimationFrame(() => point.classList.add("is-pulse"));
+        } else if (!active) {
+          point.classList.remove("is-pulse");
+        }
+      });
+      els.pointCaption.textContent = view.phase;
+
+      document.getElementById("orbit-left").classList.toggle("is-active", view.orbitActive);
+      document.getElementById("orbit-right").classList.toggle("is-active", view.orbitActive);
+    }
+
+    const voiceSelect = document.getElementById("voiceSelect");
+    for (const option of [...voiceSelect.options]) {
+      if (!Object.hasOwn(window.EYE_VOICE_PACKS, option.value)) option.remove();
+    }
+    const voicePreview = document.getElementById("voicePreview");
+    const audioTracks = createEyeAudio({
+
+
+      voiceLevel: getVoiceLevel,
+      musicLevel: () => getMusicLevel() * Number(els.volumeInput.value) / 100,
+      musicEnabled: () => els.ambientToggle.checked,
+      isPlaying: () => state.status === "playing",
+      voiceStatus: document.getElementById("voiceStatus"),
+      musicStatus: document.getElementById("musicStatus")
+    });
+
+    const settingsPrefix = "eye-exercise-public.settings.";
+    (() => {
+      const key = settingsPrefix + 'wallpaper';
+      const input = document.getElementById('backgroundFile');
+      const status = document.getElementById('backgroundStatus');
+      const apply = data => { document.body.style.backgroundImage = data ? 'url("' + data + '")' : ''; };
+      let revision = 0;
+      try {
+        const saved = localStorage.getItem(key);
+        if (saved && /^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(saved)) apply(saved);
+      } catch {}
+      input.addEventListener('change', async () => {
+        const file = input.files[0];
+        if (!file) return;
+        input.value = '';
+        const token = ++revision;
+        const url = URL.createObjectURL(file);
+        try {
+          const img = new Image();
+          img.src = url;
+          await img.decode();
+          if (token !== revision) return;
+          const scale = Math.min(1, 1920 / Math.max(img.width, img.height));
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.max(1, Math.round(img.width * scale));
+          canvas.height = Math.max(1, Math.round(img.height * scale));
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          const data = canvas.toDataURL('image/jpeg', 0.8);
+          apply(data);
+          try { localStorage.setItem(key, data); status.textContent = '背景已保存在此浏览器'; }
+          catch { status.textContent = '背景仅在本次打开时生效，浏览器未能保存。'; }
+        } catch { if (token === revision) status.textContent = '无法读取图片，请选择 JPG、PNG 或 WebP 文件。'; }
+        finally { URL.revokeObjectURL(url); }
+      });
+      document.getElementById('resetBackground').addEventListener('click', () => {
+        revision++;
+        apply('');
+        try { localStorage.removeItem(key); status.textContent = '已恢复默认背景'; }
+        catch { status.textContent = '本次已恢复默认背景，浏览器未能保存。'; }
+      });
+    })();
+    function readSetting(id) {
+      try { return localStorage.getItem(settingsPrefix + id); }
+      catch { return null; }
+    }
+    function saveSetting(id, value) {
+      try { localStorage.setItem(settingsPrefix + id, value); }
+      catch { document.getElementById("settingsStatus").hidden = false; }
+    }
+
+    const savedVoice = readSetting('voiceSelect');
+    if (Object.hasOwn(window.EYE_VOICE_PACKS, savedVoice)) voiceSelect.value = savedVoice;
+    audioTracks.setVoice(voiceSelect.value);
+    function applyVoiceTempoLimit() {
+      els.bpmInput.max = String(window.EYE_VOICE_PACKS[voiceSelect.value].maxBpm);
+      if (els.bpmInput.valueAsNumber > Number(els.bpmInput.max)) els.bpmInput.value = els.bpmInput.max;
+    }
+    applyVoiceTempoLimit();
+    voiceSelect.addEventListener('change', () => {
+      // Pause first so completing the old cue cannot restart the scheduler.
+      pause();
+      audioTracks.setVoice(voiceSelect.value);
+      saveSetting('voiceSelect', voiceSelect.value);
+      applyVoiceTempoLimit();
+      els.bpmInput.dispatchEvent(new Event('input'));
+    });
+
+    for (const input of [els.bpmInput, els.volumeInput, voiceVolume, musicVolume, els.ambientToggle, els.beatToggle, els.voiceToggle, els.countToggle]) {
+      const saved = readSetting(input.id);
+      const toggle = input.type === "checkbox";
+      if (toggle && (saved === "true" || saved === "false")) input.checked = saved === "true";
+      if (!toggle && saved !== null && saved.trim() && Number.isFinite(Number(saved))) input.value = saved;
+      input.addEventListener(toggle ? "change" : "input", () => saveSetting(input.id, toggle ? input.checked : input.value));
+    }
+    els.volumeLabel.textContent = els.volumeInput.value + "%";
+    document.getElementById("voiceLevel").value = voiceVolume.value + "%";
+    document.getElementById("musicLevel").value = musicVolume.value + "%";
+
+    voicePreview.addEventListener("click", () => {
+      if (state.status !== "playing") speak("一，二，三，四，五，六，七，八");
+    });
+    document.getElementById("removeMusic").addEventListener("click", () => { void audioTracks.removeMusic(); });
+    document.getElementById("musicFile").addEventListener("change", event => {
+      void audioTracks.selectMusicFile(event.target.files[0]);
+      event.target.value = "";
+    });
+
+    function speak(text) {
+      if (!text || getVoiceLevel() === 0) return;
+      audioTracks.playVoice(text).catch(error => {
+        document.getElementById("voiceStatus").textContent = "人声加载失败，请重试。";
+        console.warn(error);
+      });
+    }
+
+    function announceCue(text) {
+      if (!els.voiceToggle.checked || getVoiceLevel() === 0) return Promise.resolve();
+      return audioTracks.playVoice(text);
+    }
+
+    function stopSpeech() {
+      audioTracks.stopVoice();
+    }
+
+    function stopPlayback({ keepMusic = false } = {}) {
+      window.clearInterval(state.scheduler);
+      state.scheduler = null;
+      cancelAnimationFrame(state.raf);
+      state.raf = null;
+      stopSpeech();
+      if (!keepMusic) audioTracks.pauseMusic();
+      state.beatNodes.forEach((node) => node.stop());
+      state.beatNodes.clear();
+      if (state.masterGain) state.masterGain.gain.setValueAtTime(0, state.audio.currentTime);
+    }
+
+    function setPlayButton(isPlaying) {
+      voicePreview.disabled = isPlaying;
+      els.playIcon.textContent = isPlaying ? "▮▮" : "▶";
+      els.playText.textContent = isPlaying ? "播放中" : state.status === "paused" ? "继续" : "开始";
+      const label = isPlaying ? "暂停" : state.status === "paused" ? "继续" : state.status === "finished" ? "重新开始" : "开始";
+      els.playBtn.setAttribute("aria-label", label);
+      els.playBtn.title = label;
+    }
+
+    function updateTotalTime() {
+      els.bpmLabel.textContent = `${getBpm()} BPM`;
+      els.totalTime.textContent = `节拍时长 ${formatTime(getTotalSeconds())}`;
+    }
+
+    function updateVolume() {
+      const value = Number(els.volumeInput.value);
+      els.volumeLabel.textContent = `${value}%`;
+      if (state.masterGain) {
+        state.masterGain.gain.setTargetAtTime(state.status === "playing" && !state.introducing ? value / 100 : 0, state.audio.currentTime, 0.02);
+      }
+      audioTracks.updateVoiceVolume();
+      audioTracks.updateMusicVolume();
+    }
+
+    els.playBtn.addEventListener("click", play);
+    els.pauseBtn.addEventListener("click", pause);
+    els.resetBtn.addEventListener("click", reset);
+
+    let previousBeatDuration = getSecondsPerBeat();
+    els.bpmInput.addEventListener("input", () => {
+      const position = state.pausedElapsed / previousBeatDuration;
+      previousBeatDuration = getSecondsPerBeat();
+      updateTotalTime();
+      state.pausedElapsed = state.status === "finished" ? getTotalSeconds() : position * previousBeatDuration;
+      renderAtBeat(state.selectedBeat, state.pausedElapsed);
+    });
+
+    els.volumeInput.addEventListener("input", updateVolume);
+
+    voiceVolume.addEventListener("input", () => {
+      document.getElementById("voiceLevel").value = voiceVolume.value + "%";
+      audioTracks.updateVoiceVolume();
+    });
+
+    function updateMusicVolume() {
+      document.getElementById("musicLevel").value = musicVolume.value + "%";
+      audioTracks.syncMusic();
+    }
+
+    musicVolume.addEventListener("input", updateMusicVolume);
+    els.ambientToggle.addEventListener("change", updateMusicVolume);
+
+    els.beatToggle.addEventListener("change", () => {
+      if (!state.cueGain || !state.audio) return;
+      const target = els.beatToggle.checked ? 0.8 : 0;
+      state.cueGain.gain.setTargetAtTime(target, state.audio.currentTime, 0.04);
+    });
+
+    els.voiceToggle.addEventListener("change", () => {
+      if (!els.voiceToggle.checked && state.introducing) stopSpeech();
+    });
+
+    els.countToggle.addEventListener("change", () => {
+      if (!els.countToggle.checked && !state.introducing) stopSpeech();
+    });
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) pause();
+    });
+
+    const beatDefaults = exerciseSteps.map(step => step.beats);
+    function applyBeatGroups(index, groups) {
+      const step = exerciseSteps[index];
+      step.beats = groups * 8;
+      if (step.actionTotal) step.actionTotal = step.mode === "orbit" ? step.beats / 2 : step.beats;
+      step.summary = `${groups} 个八拍 · ${step.beats} 拍`;
+    }
+    exerciseSteps.forEach((step, index) => {
+      const value = Number(readSetting('groups:' + step.name));
+      applyBeatGroups(index, Number.isInteger(value) && value >= 1 && value <= 32 ? value : beatDefaults[index] / 8);
+    });
+    function rebuildTiming() {
+      totalBeats = exerciseSteps.reduce((sum, step) => sum + step.beats, 0);
+      stepMap = buildStepMap();
+    }
+    function commitTiming(index) {
+      const wasPlaying = state.status === "playing";
+      reset();
+      rebuildTiming();
+      buildUi();
+      jumpToBeat(stepMap[index].startBeat);
+      document.getElementById('beatSettingsStatus').textContent = wasPlaying ? '已暂停，八拍数已更新。' : '八拍数已更新。';
+    }
+    function buildBeatSettings() {
+      const container = document.getElementById('beatSettings');
+      container.replaceChildren();
+      exerciseSteps.forEach((step, index) => {
+        const row = document.createElement('div');
+        row.className = 'beat-setting';
+        const label = document.createElement('label');
+        const input = document.createElement('input');
+        input.type = 'number'; input.min = '1'; input.max = '32'; input.step = '1';
+        input.id = 'groups-' + index; input.value = String(step.beats / 8);
+        label.htmlFor = input.id; label.textContent = step.name;
+        const unit = document.createElement('span'); unit.textContent = '个八拍';
+        input.addEventListener('change', () => {
+          const value = input.valueAsNumber;
+          if (!Number.isInteger(value) || value < 1 || value > 32) {
+            input.value = String(step.beats / 8);
+            document.getElementById('beatSettingsStatus').textContent = '请输入 1 至 32 的整数。';
+            return;
+          }
+          applyBeatGroups(index, value);
+          saveSetting('groups:' + step.name, String(value));
+          commitTiming(index);
+        });
+        row.append(label, input, unit); container.append(row);
+      });
+    }
+    document.getElementById('restoreBeats').addEventListener('click', () => {
+      exerciseSteps.forEach((step, index) => {
+        applyBeatGroups(index, beatDefaults[index] / 8);
+        saveSetting('groups:' + step.name, String(beatDefaults[index] / 8));
+      });
+      commitTiming(0);
+      buildBeatSettings();
+    });
+    rebuildTiming();
+    buildBeatSettings();
+    buildUi();
+  </script>
+</body>
+</html>
